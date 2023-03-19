@@ -1,8 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import NumberDisplay from '../NumberDisplay';
+import { genereateCells } from '../../utils';
+import Button from '../Button';
+
 import './Minesweeper.scss';
 
 const Minesweeper: React.FC = () => {
+  const [cells, setCells] = useState(genereateCells());
+
+  const renderCells = (): React.ReactNode => {
+    return cells.map((row, rowIndex) =>
+      row.map((cell, colIndex) => <Button key={`${rowIndex}-${colIndex}`} />)
+    );
+  };
+
   return (
     <div className="Minesweeper">
       <div className="Header">
@@ -14,7 +25,7 @@ const Minesweeper: React.FC = () => {
         </div>
         <NumberDisplay value={23} />
       </div>
-      <div className="Body">Body</div>
+      <div className="Body">{renderCells()}</div>
     </div>
   );
 };
