@@ -1,25 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import NumberDisplay from '../NumberDisplay';
-import { genereateCells, openMultipleCells } from '../../utils';
+import { generateCells, openMultipleCells } from '../../utils';
 import Button from '../Button';
 import { Face, Cell, CellState, CellValue } from '../../types';
+import { MAX_ROWS, MAX_COLS } from '../../constants';
 
 import './Minesweeper.scss';
 
 const Minesweeper: React.FC = () => {
-  const [cells, setCells] = useState<Cell[][]>(genereateCells());
+  const [cells, setCells] = useState<Cell[][]>(generateCells());
   const [face, setFace] = useState<Face>(Face.smile);
   const [time, setTime] = useState<number>(0);
   const [live, setLive] = useState<boolean>(false);
   const [mineCounter, setMineCounter] = useState<number>(10);
+  const [hasLost, setHasLost] = useState<boolean>(false);
+  const [hasWon, setHasWon] = useState<boolean>(false);
 
   useEffect(() => {
     const handleMouseDown = (): void => {
-      setFace(Face.excited);
+      if (live) {
+        setFace(Face.excited);
+      }
     };
+
     const handleMouseUp = (): void => {
-      setFace(Face.smile);
+      if (live) {
+        setFace(Face.smile);
+      }
     };
+
     window.addEventListener('mousedown', handleMouseDown);
     window.addEventListener('mouseup', handleMouseUp);
 
@@ -41,15 +50,35 @@ const Minesweeper: React.FC = () => {
     }
   }, [live]);
 
-  const handleCellClick = (rowParam: number, colParam: number) => (): void => {
-    if (!live) {
-      // Make sure you don't click on a mine in the beginning
-      setLive(true);
+  useEffect(() => {
+    if (hasLost) {
+      setLive(false);
+      setFace(Face.lost);
     }
+  }, [hasLost]);
 
-    const currentCell = cells[rowParam][colParam];
+  useEffect(() => {
+    if (hasWon) {
+      setLive(false);
+      setFace(Face.won);
+    }
+  }, [hasWon]);
+
+  const handleCellClick = (rowParam: number, colParam: number) => (): void => {
+    let currentCell = cells[rowParam][colParam];
     //shallow copy of cells
     let newCells = cells.slice();
+
+    if (hasLost) return;
+
+    if (!live) {
+      while (currentCell.value === CellValue.mine) {
+        console.log('hit a bomb', currentCell);
+        newCells = generateCells();
+        currentCell = newCells[rowParam][colParam];
+      }
+      setLive(true);
+    }
 
     if (
       currentCell.state === CellState.flagged ||
@@ -60,14 +89,49 @@ const Minesweeper: React.FC = () => {
 
     if (currentCell.value === CellValue.mine) {
       // Take care of mine click
+      setHasLost(true);
+      newCells[rowParam][colParam].red = true;
+      newCells = showAllMines();
+      setCells(newCells);
+      return;
     } else if (currentCell.value === CellValue.none) {
-      //spread everything
-	  newCells = openMultipleCells(newCells, rowParam, colParam)
-	  setCells(newCells)
+      newCells = openMultipleCells(newCells, rowParam, colParam);
     } else {
       newCells[rowParam][colParam].state = CellState.visible;
-      setCells(newCells);
     }
+
+    //won?
+    let safeOpenCellsExists = false;
+    for (let row = 0; row < MAX_ROWS; row++) {
+      for (let col = 0; col < MAX_COLS; col++) {
+        const currentCell = newCells[row][col];
+
+        if (
+          currentCell.value !== CellValue.mine &&
+          currentCell.state === CellState.open
+        ) {
+          safeOpenCellsExists = true;
+          break;
+        }
+      }
+    }
+
+    if (!safeOpenCellsExists) {
+      newCells = newCells.map((row) =>
+        row.map((cell) => {
+          if (cell.value === CellValue.mine) {
+            return {
+              ...cell,
+              state: CellState.flagged,
+            };
+          }
+          return cell;
+        })
+      );
+      setHasWon(true);
+    }
+
+    setCells(newCells);
   };
 
   const handleCellContext =
@@ -75,9 +139,13 @@ const Minesweeper: React.FC = () => {
     (e: React.MouseEvent<HTMLDivElement, MouseEvent>): void => {
       e.preventDefault();
 
-      if (!live) return;
+      if (!live) {
+        return;
+      }
+
       const currentCells = cells.slice();
       const currentCell = cells[rowParam][colParam];
+
       if (currentCell.state === CellState.visible) {
         return;
       } else if (currentCell.state === CellState.open) {
@@ -92,12 +160,13 @@ const Minesweeper: React.FC = () => {
     };
 
   const handleFaceClick = (): void => {
-    if (live) {
-      setLive(false);
-      setTime(0);
-      setCells(genereateCells());
-      setMineCounter(10);
-    }
+    setLive(false);
+    setTime(0);
+    setCells(generateCells());
+    setMineCounter(10);
+    setFace(Face.smile);
+    setHasLost(false);
+    setHasWon(false);
   };
 
   const renderCells = (): React.ReactNode => {
@@ -109,10 +178,27 @@ const Minesweeper: React.FC = () => {
           value={cell.value}
           onClick={handleCellClick}
           onContext={handleCellContext}
+          red={cell.red}
           row={rowIndex}
           col={colIndex}
         />
       ))
+    );
+  };
+
+  const showAllMines = (): Cell[][] => {
+    const currentCells = cells.slice();
+    return currentCells.map((row) =>
+      row.map((cell) => {
+        if (cell.value === CellValue.mine) {
+          return {
+            ...cell,
+            state: CellState.visible,
+          };
+        }
+
+        return cell;
+      })
     );
   };
 

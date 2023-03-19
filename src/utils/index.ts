@@ -48,7 +48,7 @@ const grabAllAdjacentCells = (
   };
 };
 
-export const genereateCells = (): Cell[][] => {
+export const generateCells = (): Cell[][] => {
   let cells: Cell[][] = [];
 
   for (let row = 0; row < MAX_ROWS; row++) {
@@ -73,10 +73,11 @@ export const genereateCells = (): Cell[][] => {
         row.map((cell, colIndex) => {
           if (randomRow === rowIndex && randomCol === colIndex) {
             return {
-              ...cells,
+              ...cell,
               value: CellValue.mine,
             };
           }
+
           return cell;
         })
       );
@@ -91,6 +92,7 @@ export const genereateCells = (): Cell[][] => {
       if (currentCell.value === CellValue.mine) {
         continue;
       }
+
       let numberOfMines = 0;
       const {
         topLeftCell,
