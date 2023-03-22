@@ -131,13 +131,8 @@ const Minesweeper: React.FC = () => {
       setMineCounter(0);
 
       // check if it's a new record
-      if (recordList !== undefined && recordList.length === 0) {
+      if (recordList !== undefined && recordList.length <= 10) {
         setIsRecord(true);
-      } else if (recordList !== undefined && recordList.length <= 10) {
-        const slowestTime = recordList
-          ?.sort((a, b) => a.result - b.result)
-          .slice(0, 10)[recordList.length - 1];
-        time < slowestTime.result && setIsRecord(true);
       } else if (recordList !== undefined && recordList.length > 10) {
         const slowestTime = recordList
           ?.sort((a, b) => a.result - b.result)
