@@ -1,8 +1,9 @@
 @import '../../styles/index.scss';
 
-.Button {
+.Cell {
   @include borders;
   @include buttons;
+  background-color: #b0bec5;
   width: 30px;
   height: 30px;
   display: flex;
@@ -11,18 +12,14 @@
   font-weight: bold;
 
   &.visible {
-    border-color: #7b7b7b;
+    border-color: #23415633;
     border-width: 1px;
+	background-color: #e5e8ea;
   }
 
   &.red {
-	background: red;
+    background: red;
   }
-
-  //   span {
-  // 	margin-left: 2px;
-  // 	font-size: 12px;
-  //   }
 
   &.value-1 {
     color: blue;

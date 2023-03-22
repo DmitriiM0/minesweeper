@@ -1,10 +1,11 @@
-import { MAX_COLS, MAX_ROWS, NO_OF_MINES } from '../constants';
-import { CellValue, CellState, Cell } from '../types';
+import { CellValue, CellState, Cell, Settings } from '../types';
 
 const grabAllAdjacentCells = (
   cells: Cell[][],
   rowParam: number,
-  colParam: number
+  colParam: number,
+  numberOfColumns: number,
+  numberOfRows: number
 ): {
   topLeftCell: Cell | null;
   topCell: Cell | null;
@@ -19,20 +20,20 @@ const grabAllAdjacentCells = (
     rowParam > 0 && colParam > 0 ? cells[rowParam - 1][colParam - 1] : null;
   const topCell = rowParam > 0 ? cells[rowParam - 1][colParam] : null;
   const topRightCell =
-    rowParam > 0 && colParam < MAX_COLS - 1
+    rowParam > 0 && colParam < numberOfColumns - 1
       ? cells[rowParam - 1][colParam + 1]
       : null;
   const leftCell = colParam > 0 ? cells[rowParam][colParam - 1] : null;
   const rightCell =
-    colParam < MAX_COLS - 1 ? cells[rowParam][colParam + 1] : null;
+    colParam < numberOfColumns - 1 ? cells[rowParam][colParam + 1] : null;
   const bottomLeftCell =
-    rowParam < MAX_ROWS - 1 && colParam > 0
+    rowParam < numberOfRows - 1 && colParam > 0
       ? cells[rowParam + 1][colParam - 1]
       : null;
   const bottomCell =
-    rowParam < MAX_ROWS - 1 ? cells[rowParam + 1][colParam] : null;
+    rowParam < numberOfRows - 1 ? cells[rowParam + 1][colParam] : null;
   const bottomRightCell =
-    rowParam < MAX_ROWS - 1 && colParam < MAX_COLS - 1
+    rowParam < numberOfRows - 1 && colParam < numberOfColumns - 1
       ? cells[rowParam + 1][colParam + 1]
       : null;
 
@@ -48,24 +49,28 @@ const grabAllAdjacentCells = (
   };
 };
 
-export const generateCells = (): Cell[][] => {
+export const generateCells = ({
+  numberOfRows,
+  numberOfColumns,
+  numberOfMines,
+}: Settings): Cell[][] => {
   let cells: Cell[][] = [];
 
-  for (let row = 0; row < MAX_ROWS; row++) {
+  for (let row = 0; row < numberOfRows; row++) {
     cells.push([]);
-    for (let col = 0; col < MAX_COLS; col++) {
+    for (let col = 0; col < numberOfColumns; col++) {
       cells[row].push({
         value: CellValue.none,
-        state: CellState.open,
+        state: CellState.hidden,
       });
     }
   }
 
   //randomly put mines
   let minesPlaced = 0;
-  while (minesPlaced < NO_OF_MINES) {
-    const randomRow = Math.floor(Math.random() * MAX_ROWS);
-    const randomCol = Math.floor(Math.random() * MAX_COLS);
+  while (minesPlaced < numberOfMines) {
+    const randomRow = Math.floor(Math.random() * numberOfRows);
+    const randomCol = Math.floor(Math.random() * numberOfColumns);
 
     const currentCell = cells[randomRow][randomCol];
     if (currentCell.value !== CellValue.mine) {
@@ -86,8 +91,8 @@ export const generateCells = (): Cell[][] => {
   }
 
   //calculate the numbers for each cell
-  for (let rowIndex = 0; rowIndex < MAX_ROWS; rowIndex++) {
-    for (let colIndex = 0; colIndex < MAX_COLS; colIndex++) {
+  for (let rowIndex = 0; rowIndex < numberOfRows; rowIndex++) {
+    for (let colIndex = 0; colIndex < numberOfColumns; colIndex++) {
       const currentCell = cells[rowIndex][colIndex];
       if (currentCell.value === CellValue.mine) {
         continue;
@@ -103,7 +108,13 @@ export const generateCells = (): Cell[][] => {
         bottomLeftCell,
         bottomCell,
         bottomRightCell,
-      } = grabAllAdjacentCells(cells, rowIndex, colIndex);
+      } = grabAllAdjacentCells(
+        cells,
+        rowIndex,
+        colIndex,
+        numberOfColumns,
+        numberOfRows
+      );
 
       if (topLeftCell?.value === CellValue.mine) {
         numberOfMines++;
@@ -145,7 +156,9 @@ export const generateCells = (): Cell[][] => {
 export const openMultipleCells = (
   cells: Cell[][],
   rowParam: number,
-  colParam: number
+  colParam: number,
+  numberOfColumns: number,
+  numberOfRows: number
 ): Cell[][] => {
   const currentCell = cells[rowParam][colParam];
 
@@ -168,85 +181,139 @@ export const openMultipleCells = (
     bottomLeftCell,
     bottomCell,
     bottomRightCell,
-  } = grabAllAdjacentCells(cells, rowParam, colParam);
+  } = grabAllAdjacentCells(
+    cells,
+    rowParam,
+    colParam,
+    numberOfColumns,
+    numberOfRows
+  );
 
   if (
-    topLeftCell?.state === CellState.open &&
+    topLeftCell?.state === CellState.hidden &&
     topLeftCell.value !== CellValue.mine
   ) {
     if (topLeftCell.value === CellValue.none) {
-      newCells = openMultipleCells(newCells, rowParam - 1, colParam - 1);
+      newCells = openMultipleCells(
+        newCells,
+        rowParam - 1,
+        colParam - 1,
+        numberOfColumns,
+        numberOfRows
+      );
     } else {
       newCells[rowParam - 1][colParam - 1].state = CellState.visible;
     }
   }
 
-  if (topCell?.state === CellState.open && topCell.value !== CellValue.mine) {
+  if (topCell?.state === CellState.hidden && topCell.value !== CellValue.mine) {
     if (topCell.value === CellValue.none) {
-      newCells = openMultipleCells(newCells, rowParam - 1, colParam);
+      newCells = openMultipleCells(
+        newCells,
+        rowParam - 1,
+        colParam,
+        numberOfColumns,
+        numberOfRows
+      );
     } else {
       newCells[rowParam - 1][colParam].state = CellState.visible;
     }
   }
 
   if (
-    topRightCell?.state === CellState.open &&
+    topRightCell?.state === CellState.hidden &&
     topRightCell.value !== CellValue.mine
   ) {
     if (topRightCell.value === CellValue.none) {
-      newCells = openMultipleCells(newCells, rowParam - 1, colParam + 1);
+      newCells = openMultipleCells(
+        newCells,
+        rowParam - 1,
+        colParam + 1,
+        numberOfColumns,
+        numberOfRows
+      );
     } else {
       newCells[rowParam - 1][colParam + 1].state = CellState.visible;
     }
   }
 
-  if (leftCell?.state === CellState.open && leftCell.value !== CellValue.mine) {
+  if (leftCell?.state === CellState.hidden && leftCell.value !== CellValue.mine) {
     if (leftCell.value === CellValue.none) {
-      newCells = openMultipleCells(newCells, rowParam, colParam - 1);
+      newCells = openMultipleCells(
+        newCells,
+        rowParam,
+        colParam - 1,
+        numberOfColumns,
+        numberOfRows
+      );
     } else {
       newCells[rowParam][colParam - 1].state = CellState.visible;
     }
   }
 
   if (
-    rightCell?.state === CellState.open &&
+    rightCell?.state === CellState.hidden &&
     rightCell.value !== CellValue.mine
   ) {
     if (rightCell.value === CellValue.none) {
-      newCells = openMultipleCells(newCells, rowParam, colParam + 1);
+      newCells = openMultipleCells(
+        newCells,
+        rowParam,
+        colParam + 1,
+        numberOfColumns,
+        numberOfRows
+      );
     } else {
       newCells[rowParam][colParam + 1].state = CellState.visible;
     }
   }
 
   if (
-    bottomLeftCell?.state === CellState.open &&
+    bottomLeftCell?.state === CellState.hidden &&
     bottomLeftCell.value !== CellValue.mine
   ) {
     if (bottomLeftCell.value === CellValue.none) {
-      newCells = openMultipleCells(newCells, rowParam + 1, colParam - 1);
+      newCells = openMultipleCells(
+        newCells,
+        rowParam + 1,
+        colParam - 1,
+        numberOfColumns,
+        numberOfRows
+      );
     } else {
       newCells[rowParam + 1][colParam - 1].state = CellState.visible;
     }
   }
 
   if (
-    bottomCell?.state === CellState.open &&
+    bottomCell?.state === CellState.hidden &&
     bottomCell.value !== CellValue.mine
   ) {
     if (bottomCell.value === CellValue.none) {
-      newCells = openMultipleCells(newCells, rowParam + 1, colParam);
+      newCells = openMultipleCells(
+        newCells,
+        rowParam + 1,
+        colParam,
+        numberOfColumns,
+        numberOfRows
+      );
     } else {
       newCells[rowParam + 1][colParam].state = CellState.visible;
     }
   }
 
   if (
-    bottomRightCell?.state === CellState.open &&
+    bottomRightCell?.state === CellState.hidden &&
     bottomRightCell.value !== CellValue.mine
   ) {
     if (bottomRightCell.value === CellValue.none) {
-      newCells = openMultipleCells(newCells, rowParam + 1, colParam + 1);
+      newCells = openMultipleCells(
+        newCells,
+        rowParam + 1,
+        colParam + 1,
+        numberOfColumns,
+        numberOfRows
+      );
     } else {
       newCells[rowParam + 1][colParam + 1].state = CellState.visible;
     }

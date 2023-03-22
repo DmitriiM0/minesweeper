@@ -1,8 +1,8 @@
 import React from 'react';
 import { CellState, CellValue } from '../../types';
-import './Button.scss';
+import './Cell.scss';
 
-interface ButtonProps {
+interface CellProps {
   col: number;
   onClick(rowParam: number, colParam: number): (...args: any[]) => void;
   onContext(rowParam: number, colParam: number): (...args: any[]) => void;
@@ -12,7 +12,7 @@ interface ButtonProps {
   red?: boolean;
 }
 
-const Button: React.FC<ButtonProps> = ({
+const Cell: React.FC<CellProps> = ({
   row,
   col,
   onClick,
@@ -39,12 +39,18 @@ const Button: React.FC<ButtonProps> = ({
           🚩
         </span>
       );
+    } else if (state === CellState.question) {
+      return (
+        <span role="img" aria-label="flag">
+          ❓
+        </span>
+      );
     }
   };
 
   return (
     <div
-      className={`Button ${
+      className={`Cell ${
         state === CellState.visible ? 'visible' : ''
       } value-${value} ${red ? 'red' : ''}`}
       onClick={onClick(row, col)}
@@ -55,4 +61,4 @@ const Button: React.FC<ButtonProps> = ({
   );
 };
 
-export default Button;
+export default Cell;
